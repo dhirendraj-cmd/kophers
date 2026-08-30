@@ -14,7 +14,26 @@ func GetOrders(db *sql.DB) http.HandlerFunc{
 	fmt.Println("Getting orders from db...")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT * FROM orders")
+
+		query := `SELECT
+						o.id,
+						o.amount,
+						o.status,
+						o.created_at,
+							COALESCE(
+									json_agg(
+										json_build_object(
+											'quantity', oi.quantity,
+											'item_id', oi.item_id
+										) 
+								)FILTER (WHERE oi.id is NOT NULL), '[]'::json
+							) AS order_items
+					FROM orders AS o
+					LEFT JOIN orderitem AS oi ON o.id=oi.order_id
+					GROUP BY o.id, o.amount, o.status, o.created_at
+				`
+
+		rows, err := db.QueryContext(r.Context(), query)
 		if err!=nil{
 			http.Error(w, "Error while reading the orders! ", http.StatusBadRequest)
 			fmt.Println("Error reading items... ", err)
@@ -24,15 +43,23 @@ func GetOrders(db *sql.DB) http.HandlerFunc{
 		defer rows.Close()
 
 		var allOrders []models.Orders
+		var order models.Orders
+		var orderItemsRaw []byte
 
 		for rows.Next(){
-			var order models.Orders
 
-			err = rows.Scan(&order.ID, &order.Amount, &order.Status, &order.CreatedAt)
+			err = rows.Scan(&order.ID, &order.Amount, &order.Status, &order.CreatedAt, &orderItemsRaw)
 			if err!=nil{
 				http.Error(w, "Erorr scanning orders!!!", http.StatusInternalServerError)
 				fmt.Println("Error Scaning Items table... ", err)
 				return 
+			}
+
+			// unmarshall the raw db
+			err = json.Unmarshal(orderItemsRaw, &order.Items)
+			if err != nil {
+				http.Error(w, "Failed to parse nested data", http.StatusInternalServerError)
+				return
 			}
 
 			allOrders = append(allOrders, order)
@@ -43,6 +70,7 @@ func GetOrders(db *sql.DB) http.HandlerFunc{
 			fmt.Println("Error while iterating.... ", err)
 			return
 		}
+
 
 		// set content type to application json in header
 		w.Header().Set("Content-Type", "application/json")

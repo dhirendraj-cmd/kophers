@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
 	"github.com/dhirendraj-cmd/cmd/services/orders/models"
 )
 
@@ -43,7 +42,7 @@ func CreateOrder(db *sql.DB) http.HandlerFunc{
 			item_prices := `SELECT price FROM items where id=$1`
 			err = tx.QueryRowContext(r.Context(), item_prices, item.ItemId).Scan(&prices)
 			if err != nil {
-				http.Error(w, "Item not found", http.StatusBadRequest)
+				http.Error(w, "Order not found", http.StatusBadRequest)
 				return
 			}
 
@@ -84,8 +83,8 @@ func CreateOrder(db *sql.DB) http.HandlerFunc{
         }
 
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("Item Created in DB"))
-
+		w.Write([]byte("Order Created"))
+		
 		fmt.Println("Order Created Successfully..... ")
 
 	}

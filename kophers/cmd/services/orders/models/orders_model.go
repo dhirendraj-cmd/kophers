@@ -8,6 +8,7 @@ type Orders struct{
 	Amount		int 		`json:"amount"`
 	Status 		string 		`json:"status"`
 	CreatedAt	time.Time 	`json:"created_at"`
+	Items     []OrderItemResponse `json:"items"`
 }
 
 type OrderItem struct{
@@ -28,4 +29,9 @@ type OrderItemRequest struct {
 type CreateOrderRequest struct {
     Status string `json:"status"`
     Items  []OrderItemRequest `json:"items"`
+}
+
+type OrderItemResponse struct {
+    Quantity int `json:"quantity"`
+    ItemId   int `json:"item_id"`
 }

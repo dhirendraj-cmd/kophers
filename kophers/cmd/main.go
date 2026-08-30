@@ -12,7 +12,7 @@ import (
 
 
 func main(){
-	fmt.Println("Kafka Project")
+	fmt.Println("KOPHERS")
 	
 	db := databases.Connection()
 	defer db.Close()
@@ -26,6 +26,7 @@ func main(){
 	// order apis
 	http.HandleFunc("/api/ord/create", orderapis.CreateOrder(db))
 	http.HandleFunc("/api/ord/orders", orderapis.GetOrders(db))
+	http.HandleFunc("/api/ord/order", orderapis.GetOrderById(db))
 
 	err := http.ListenAndServe(":3000", nil)
 	if err!=nil{
